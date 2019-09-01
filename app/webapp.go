@@ -15,17 +15,16 @@ type PlayerServer struct {
 }
 
 func (p *PlayerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-
+	player := r.URL.Path[len("/players/"):]
 	switch r.Method {
 	case http.MethodPost:
-		p.postScore(w)
+		p.postScore(w, player)
 	case http.MethodGet:
-		p.getScore(w, r)
+		p.getScore(w, player)
 	}
 }
 
-func (p *PlayerServer) getScore(w http.ResponseWriter, r *http.Request) {
-	player := r.URL.Path[len("/players/"):]
+func (p *PlayerServer) getScore(w http.ResponseWriter, player string) {
 	score := p.store.GetPlayerScore(player)
 	if score == 0 {
 		w.WriteHeader(http.StatusNotFound)
@@ -33,7 +32,8 @@ func (p *PlayerServer) getScore(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, score)
 }
 
-func (p *PlayerServer) postScore(w http.ResponseWriter) {
+func (p *PlayerServer) postScore(w http.ResponseWriter, player string) {
+	p.store.PostScore(player)
 	w.WriteHeader(http.StatusAccepted)
 }
 
