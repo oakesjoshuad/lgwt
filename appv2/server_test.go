@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -148,6 +149,22 @@ func TestLeague(t *testing.T) {
 	})
 }
 
+func TestFileSystemStore(t *testing.T) {
+	t.Run("/league from reader", func(t *testing.T) {
+		database := strings.NewReader(`[
+			{"Name": "Cleo", "Wins": 10},
+			{"Name": "Chris", "Wins": 33}]`)
+		store := FileSystemPlayerStore{database}
+		got := store.GetLeague()
+		want := []Player{
+			{"Cleo", 10},
+			{"Chris", 33},
+		}
+		assertLeague(t, got, want)
+
+	})
+}
+
 func assertLeague(t *testing.T, got, want []Player) {
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got %v want %v", got, want)
@@ -156,12 +173,13 @@ func assertLeague(t *testing.T, got, want []Player) {
 
 func getLeagueFromResponse(t *testing.T, body io.Reader) (league []Player) {
 	t.Helper()
-	err := json.NewDecoder(body).Decode(&league)
+	league, err := NewLeague(body)
 	if err != nil {
 		t.Fatalf("unable to parse response from server %q into slice of Player, '%v'", body, err)
 	}
 	return
 }
+
 func assertStatus(t *testing.T, got, want int) {
 	t.Helper()
 	if got != want {
